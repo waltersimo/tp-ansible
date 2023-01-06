@@ -1,4 +1,6 @@
-# Description
+# README
+
+## Description
 The aim of this work is twofold:
 1. Create EC2 Instance via a role with
     * Virtual private cloud (VPC)
@@ -34,4 +36,5 @@ You need to custom some variable in the file main.yml located in /roles/create-e
 * path_my_inventory*
 
 The variables marked * must be customed !!
+
 *Walter Simo*
