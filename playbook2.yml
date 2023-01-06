@@ -1,0 +1,41 @@
+- name: test installation of docker
+  hosts: ec2_ubuntu
+  gather_facts: true
+  become: true
+  
+
+  roles:
+    - { role: install-docker , ansible_user: ubuntu }
+
+  tasks:
+    - name: add a new user to docker group in the hosts of ec2_ubuntu group
+      user: 
+        name: ansible_user 
+        groups: docker
+        append: yes
+
+    - name: launch a nginx docker container
+      docker_container:
+        name: nginx-container
+        image: nginx:latest
+        state: started
+        detach: yes
+        exposed_ports:
+          - 80
+        published_ports:
+          - 8080:80
+      register: reg_nginx
+
+    - name: State of the nginx container
+      debug:
+        var: "{{ reg_nginx }}"
+
+    - name: Check that nginx page at localhost:80
+      ansible.builtin.uri:
+        url: http://localhost:8080
+        return_content: yes
+      register: nginx_page
+
+    - name: Display content of http://localhost:8080
+      debug:
+        msg: "The content of http://localhost:8080  is {{ nginx_page.content }}"

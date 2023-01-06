@@ -1,0 +1,42 @@
+- name: Create an EC2 instance with VPC, Internet Gateway Security group and  keypair
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  roles:
+    - { role: create-ec2-instance, register_vars: true}
+
+  tasks:
+    - name: Creation ec2 instances ended 
+      ansible.builtin.debug:
+        msg: The creation of VM is done !
+
+    - name: Update of the inventory both in memory and in inventory.ini file
+      block:
+        - name: Add newly created hosts to ec2_ubuntu group in memory
+          ansible.builtin.add_host: 
+            hostname: "{{ item.public_dns_name }}" 
+            ansible_user: ubuntu
+            ansible_ssh_private_key_file: "{{ ec2_key_directory }}{{ keypair_name }}"
+            groups: 
+              - ec2_ubuntu            
+          loop: "{{ list_ec2 }}"
+          register: list_host_added
+
+        - name: Display public IP address of the newly created instance
+          ansible.builtin.debug:
+            msg: "The public IP address of the EC2 Instance is {{ list_ec2[0].public_ip_address }}"
+
+        - name: Display public DNS name of the IP address of the newly created instance
+          ansible.builtin.debug:
+            msg: "The public DNS name of the EC2 Instance is {{ list_ec2[0].public_dns_name }}"
+
+        - name: Adding the newly created hosts to the inventory.ini file in TP directory
+          ansible.builtin.lineinfile:
+            path: "{{ path_my_inventory }}"
+            insertbefore: '#endubuntuhost'  #insert the hostname at the line above #endubuntuhost
+            line: "ubuntu_ec2_{{ ind }} ansible_host={{ item.public_dns_name }} ansible_user=ubuntu ansible_ssh_private_key_file={{ ec2_key_directory }}{{ keypair_name }}" 
+            state: present
+          with_items: "{{ list_ec2 }}"
+          loop_control:
+            index_var: ind
+      when: need_update_host
