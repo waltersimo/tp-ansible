@@ -34,3 +34,6 @@ You need to custom some variable in the file main.yml located in /roles/create-e
 * path_my_inventory*
 
 The variables marked * must be customed !!!
+
+walter simo
+01/2023
