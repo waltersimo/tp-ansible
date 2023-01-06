@@ -1,0 +1,143 @@
+---
+
+- name: create VPC (Virtual Private Cloud)
+  amazon.aws.ec2_vpc_net:
+    name: "{{ vpc_name }}"
+    cidr_block: "{{ vpc_cidr }}"
+    region: "{{ region }}"
+    state: present
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+  register: vpc
+
+
+- name: Set VPC ID in variable
+  ansible.builtin.set_fact:
+    vpc_id: "{{ vpc.vpc.id }}"
+
+- name: associate subnet to the VPC
+  amazon.aws.ec2_vpc_subnet:
+    state: present
+    vpc_id: "{{ vpc_id }}"
+    region: "{{ region }}"
+    cidr: "{{ subnet_cidr }}"
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    map_public: true
+    resource_tags:
+      Name: "{{ subnet_name }}"
+  register: subnet
+
+- name: create IGW
+  amazon.aws.ec2_vpc_igw:
+    vpc_id: "{{ vpc_id }}"
+    region: "{{ region }}"
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    state: "present"
+    tags:
+      Name: "{{ igw_name }}"
+  register: igw
+
+
+- name: Create Route Internet Gateway (IGW)
+  amazon.aws.ec2_vpc_route_table:
+    vpc_id: "{{ vpc_id }}"
+    region: "{{ region }}"
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    subnets:
+      - "{{ subnet.subnet.id }}"
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ igw.gateway_id  }}"
+    tags:
+      Name: "{{ route_name }}"
+
+- name: Create Security Group
+  amazon.aws.ec2_security_group:
+    name: Web_DMZ
+    description: DMZ Security Group
+    vpc_id: "{{ vpc_id }}"
+    region: "{{ region }}"
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    rules:
+      - proto: tcp  # ssh
+        from_port: 22
+        to_port: 22
+        cidr_ip: 0.0.0.0/0
+        rule_desc: allow all ssh connection on port 22
+      - proto: tcp  # http
+        from_port: 80
+        to_port: 80
+        cidr_ip: 0.0.0.0/0
+        rule_desc: allow http 
+      - proto: tcp  # https
+        from_port: 443
+        to_port: 443
+        cidr_ip: 0.0.0.0/0
+        rule_desc: allow https
+  register: security_group
+
+- name: create a new ec2 key pair, returns generated private key
+  amazon.aws.ec2_key:
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    name: "{{ keypair_name }}"
+    region: "{{ region }}"
+  register: keypair
+
+- name: Copy EC2 Key Pair private key locally
+  copy: 
+    content: "{{ keypair.key.private_key }}" 
+    dest: "{{ ec2_key_directory }}{{ keypair_name }}"
+    mode: 0600
+  when: keypair.changed
+
+# - name: display output security_group
+#   debug:
+#     var: security_group
+
+# create the ec2 instance
+- name: Create EC2 Instance
+  amazon.aws.ec2_instance:
+    name: "{{ name_ec2 }}"
+    key_name: "{{ keypair.key.name  }}"
+    image_id: "{{ ami }}"
+    state: running
+    wait: true
+    instance_type: "{{ instance_type }}"
+    region: "{{ region }}"
+    network:
+      assign_public_ip: true
+    security_group: "{{ security_group.group_id }}"
+    vpc_subnet_id: "{{ subnet.subnet.id }}"
+    
+    exact_count: 1
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+
+    tags:
+      env: test
+  register: ec2
+
+- name: save the list of newly created instance into var list_ec2
+  block:
+    - name: save list of newly created ec2 instances with set_stats
+      ansible.builtin.set_fact:
+        list_ec2: "{{ ec2.instances }}"
+        need_update_host: true
+      when: register_vars
+  when: ec2.changed
+
+# - name: Set public DNS name in variable public_dns_name
+#   ansible.builtin.set_fact:
+#     public_dns_name: "{{ ec2.instances[0].public_dns_name }}"
+
+# - name: Adding the first created host to the inventory.ini file in TP directory
+#   ansible.builtin.lineinfile:
+#     path: "{{ path_my_inventory }}"
+#     insertbefore: '#endubuntuhost'
+#     line: "{{ public_dns_name }}" 
+#     state: present

@@ -1,0 +1,36 @@
+---
+
+aws_access_key: xxxxx
+aws_secret_key: xxxxx
+
+# VPC
+vpc_cidr: 10.10.0.0/24
+vpc_name: "Ansible_VPC"
+
+# Subnet
+subnet_name: "Ansible_Subnet"
+subnet_cidr: 10.10.0.0/26
+
+igw_name: "Traffic_IGW"
+
+
+#route table name
+route_name: "Public_Ansible"
+
+securitygroup_name: "Ansible_Security_Group"
+
+ec2_tag: "testAnsibleEC2"
+
+
+#key storage location
+ec2_key_directory: "/home/ubuntu/Module_Ansible/ssh-keys/"
+keypair_name: "ec2_ansible_key.pem"
+
+name_ec2: Ansible_EC2_instance
+ami: ami-03b755af568109dc3 # Ubuntu 22.04
+instance_type: t2.micro
+region: eu-west-3          # Paris
+
+# path inventory
+path_my_inventory: /home/ubuntu/Module_Ansible/TP/inventory.ini
+
