@@ -1,6 +1,6 @@
 # Description
-The aim of this tp is 
-1. create EC2 Instance via a role with
+The aim of this work is twofold:
+1. Create EC2 Instance via a role with
     * Virtual private cloud (VPC)
     * Internet Gateaway (IGW)
     * Security group avec autorisation de ssh, http et htttps
@@ -20,7 +20,7 @@ ansible-playbook playbook2.yml -i inventory.ini -y
 
 2. The second command install docker and docker-compose on the newly created ec2 instance and check by launching an nginx container
 
-
+---
 ## Remark:
 
 You need to custom some variable in the file main.yml located in /roles/create-ec2-instance/tasks such as
@@ -33,6 +33,5 @@ You need to custom some variable in the file main.yml located in /roles/create-e
 * region
 * path_my_inventory*
 
-The variables marked * must be customed !!!
-
-                                                             *Walter Simo*
+The variables marked * must be customed !!
+*Walter Simo*
