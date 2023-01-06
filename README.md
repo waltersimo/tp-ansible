@@ -1,4 +1,15 @@
-#commands to launch
+# Description
+The aim of this tp is 
+1. create EC2 Instance via a role with
+    * Virtual private cloud (VPC)
+    * Internet Gateaway (IGW)
+    * Security group avec autorisation de ssh, http et htttps
+    *  KeyPair 
+2. Install docker and docker-compose and run a docker-container via another role on the newly created instance
+
+All this being automtized such that nothing is done manually !!
+
+## commands to launch
 
 ```bash
 ansible-playbook playbook.yml -i inventory.ini
@@ -22,4 +33,4 @@ You need to custom some variable in the file main.yml located in /roles/create-e
 * region
 * path_my_inventory*
 
-the variables marked * must be customed !!!
+The variables marked * must be customed !!!
